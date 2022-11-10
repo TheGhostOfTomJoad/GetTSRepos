@@ -1,2 +1,5 @@
 .vscode
 lib
+node_modules
+dist
+.vscode
