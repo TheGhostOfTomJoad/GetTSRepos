@@ -1,41 +1,39 @@
 #!/usr/bin/env node
 import { Octokit } from "@octokit/rest";
+import fetch from 'node-fetch';
+import fs from 'fs';
 
 
-console.log("1");
 
 const octokit = new Octokit();
 
-//const queryString = 'q=' + encodeURIComponent('language:typescript');
 const queryString = ('language:typescript');
-// console.log("1")
+const parameters = { q: queryString };
 
 
-const response = octokit.rest.search.repos({ q: queryString });
-// console.log("2")
+const iterator = octokit.paginate.iterator(octokit.rest.search.repos, parameters)
 
-let urls: string[] = [];
-// // ,per_page: 1, page : 1
-// //console.log((await response).data.items)
-// console.log("3")
+fs.mkdirSync('./ts-repos', { recursive: true })
 
+for await (const r of iterator) {
+        console.log("iteration\n")
+        let responseData = r.data
 
+        let archive_format = "zipball";
+        let ref = "/master";
+        let replcaceVars = ((s: string) => (s.replace("{archive_format}", archive_format)).replace("{/ref}", ref));
+        let namesUrls : string[][] = responseData.map(element => [element.name ,replcaceVars(element.archive_url)]
 
-(await response).data.items.forEach(element => {
-        console.log(element.html_url);
-        urls.push(element.html_url)
-})
-
-
-console.log(urls.length);
-
-
-
-//let itemsInResponse = await (response.then( x => x.data).then(x => x.items ))
-
+        );
+        console.log(namesUrls.toString())
+        namesUrls.forEach(nameURL => {
+                fetch(nameURL[1]).then(res => { if (res.body){
+                        res.body.pipe(fs.createWriteStream(`./ts-repos/${nameURL[0]}.zip`))}} )
+                
+        });
 
 
 
-//console.log(urls[0])
+}
 
-//console.log(response.data.items)
+
