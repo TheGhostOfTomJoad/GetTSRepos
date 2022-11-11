@@ -22,14 +22,17 @@ for await (const r of iterator) {
         let archive_format = "zipball";
         let ref = "/master";
         let replcaceVars = ((s: string) => (s.replace("{archive_format}", archive_format)).replace("{/ref}", ref));
-        let namesUrls : string[][] = responseData.map(element => [element.name ,replcaceVars(element.archive_url)]
+        let namesUrls: string[][] = responseData.map(element => [element.name, replcaceVars(element.archive_url)]
 
         );
         console.log(namesUrls.toString())
         namesUrls.forEach(nameURL => {
-                fetch(nameURL[1]).then(res => { if (res.body){
-                        res.body.pipe(fs.createWriteStream(`./ts-repos/${nameURL[0]}.zip`))}} )
-                
+                fetch(nameURL[1]).then(res => {
+                        if (res.body) {
+                                res.body.pipe(fs.createWriteStream(`./ts-repos/${nameURL[0]}.zip`))
+                        }
+                })
+
         });
 
 
