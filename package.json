@@ -1,1 +1,27 @@
-{"name":"get-repos","devDependencies":{"typescript":"^4.8.4"},"scripts":{"prebuild":"rm -rf dist","build":"tsc","test":"npm run test:clear-cache && jest","test:clear-cache":"jest --clearCache","lint":"eslint --max-warnings 0 'src/**/*.ts'","prettier":"prettier --write 'src/**/*.ts'"},"bin":{"get-repos":"dist/getRepos.js"},"dependencies":{"@octokit/rest":"^19.0.5","esm":"^3.2.25","fs":"^0.0.1-security","node-fetch":"^3.3.0","octokit":"^2.0.10"},"type":"module"}
+{
+    "name": "get-repos",
+    "devDependencies": {
+        "typescript": "^4.8.4"
+    },
+    "scripts": {
+        "prebuild": "rm -rf dist",
+        "build": "tsc",
+        "test": "npm run test:clear-cache && jest",
+        "test:clear-cache": "jest --clearCache",
+        "lint": "eslint --max-warnings 0 'src/**/*.ts'",
+        "prettier": "prettier --write 'src/**/*.ts'"
+    },
+    "bin": {
+        "get-repos": "dist/getRepos.js"
+    },
+    "dependencies": {
+        "@octokit/core": "^4.1.0",
+        "@octokit/plugin-throttling": "^4.3.2",
+        "@octokit/rest": "^19.0.5",
+        "esm": "^3.2.25",
+        "fs": "^0.0.1-security",
+        "node-fetch": "^3.3.0",
+        "octokit": "^2.0.10"
+    },
+    "type": "module"
+}
