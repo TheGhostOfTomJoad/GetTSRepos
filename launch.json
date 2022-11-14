@@ -1,0 +1,19 @@
+// launch.json
+{
+    "configurations": [
+        {
+            "type": "node",
+            "request": "launch",
+            "name": "debug with ts-node",
+            "runtimeArgs": [
+                "-r",
+                "ts-node/register",
+                "--loader",
+                "ts-node/esm"
+            ],
+            "args": [
+                "${workspaceFolder}/index.ts"
+            ]
+        }
+    ],
+}
