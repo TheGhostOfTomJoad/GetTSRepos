@@ -16,7 +16,6 @@ const MyOctokit = Octokit.plugin(
 );
 
 
-
 const octokit = new MyOctokit({
   headers: {
     Accept: "application/vnd.github.preview",
@@ -43,135 +42,57 @@ const octokit = new MyOctokit({
 });
 
 
-async function* getLinksAndNames(maxPages: number) {//: AsyncGenerator<string[][]> {
+async function* getLinksAndNames(pagesCount: number, perPage: number) {
   const queryString = ('language:typescript');
-  const parameters = { q: queryString };
+  const parameters = { q: queryString, per_page: perPage };
   const iterator = octokit.paginate.iterator(octokit.rest.search.repos, parameters)
-
-
-  let counter = 0;
-  // let maxPages = 5;
+  let archive_format = "zipball";
+  let ref = "/master";
+  let replcaceVars = ((s: string) => (s.replace("{archive_format}", archive_format)).replace("{/ref}", ref));
+  let pagesCounter = 0;
   for await (const r of iterator) {
-    if (counter <= maxPages) {
-      console.log("new page\n")
+    if (pagesCounter < pagesCount) {
       let responseData = r.data
-      let archive_format = "zipball";
-      let ref = "/master";
-      let replcaceVars = ((s: string) => (s.replace("{archive_format}", archive_format)).replace("{/ref}", ref));
-      let namesUrlsPage: [string, string][] = responseData.map(element => [element.name, replcaceVars(element.archive_url)]);
+      let namesUrlsPage: [string, string, number][] = responseData.map(element => [(element.full_name).replace("/", "_"), replcaceVars(element.archive_url), element.id]);
+      namesUrlsPage = [...new Set(namesUrlsPage)];
       yield (namesUrlsPage);
-      counter++;
+      pagesCounter++;
     }
     else { return; }
   }
 }
 
-async function toArray<T>(asyncIterator: AsyncGenerator<T>) {
-  const arr = [];
-  for await (const i of asyncIterator) arr.push(i);
-  return arr;
-}
 
-async function downloadZIPs(namesUrlsPages: AsyncGenerator<[string, string][], void, unknown>): Promise<void> {
+
+async function downloadZIPs(namesUrlsPages: AsyncGenerator<[string, string, number][], void, unknown>, maxRepos: number): Promise<void> {
   await fs.promises.mkdir('./ts-repos', { recursive: true });
-  //let counter = 0;
-
+  let downloadedRepos = new Map<number, void>
   for await (const nameURLPage of namesUrlsPages) {
-
-    // let namesUrlsPagesArray = toArray (namesUrlsPages);
-    // console.log((await namesUrlsPagesArray).length);
-    //console.log("page loop")
-    //console.log(namesUrlsPages.next())
     for (const nameURL of nameURLPage) {
-      //console.log("\n" + nameURL + "\n")
-      //console.log("link name loop")
-      try {
+      if (downloadedRepos.size < maxRepos) {
+        downloadedRepos.set(nameURL[2]);
         fetch(nameURL[1]).then(res => {
           if (res.body) {
-            res.body.pipe(fs.createWriteStream(`./ts-repos/${nameURL[0]}.zip`))
+            let writeStream = fs.createWriteStream(`./ts-repos/${nameURL[0]}.zip`);
+            res.body.pipe(writeStream);
           }
-          else { console.log("no response body") }
+          else { console.log("no response body"); }
         }).catch((x) => console.log(`can't fetch1 ${nameURL[1]}` + " " + x.stack))
-
       }
-      catch (error) {
-        console.log(`can't fetch2 ${nameURL[1]}`)
-      }
-      console.log("finished inner loop step")
     }
-    console.log("finished outer loop step")
-    //console.log(counter,maxPages)
-    // if (counter >= maxPages) { 
-    //   break;
-    // }
-    // counter++;
-    // continue;
   }
-  console.log("finished outer loop")
-  return;
 }
 
 
-
-async function main(): Promise<void> {
-  await downloadZIPs(getLinksAndNames(3));
+async function getTSRepos(pagesCount: number, perPage: number, maxRepos: number): Promise<void> {
+  await downloadZIPs(getLinksAndNames(pagesCount, perPage), maxRepos);
   console.log("finished")
   process.exit(0);
 }
 
-
-async function testGetLinkAndNames() {
-  for await (const iterator of getLinksAndNames(1)) {
-    console.log("hello")
-  }
+function main(): void {
+  getTSRepos(10, 10, 70)
 }
 
-await main();
 
-//await getLinksAndNames(1);
-//for await (const r of iterator) {
-
-
-
-//   if (counter <= maxPages) {
-//     console.log("iteration\n")
-//     let responseData = r.data
-
-//     let archive_format = "zipball";
-//     let ref = "/master";
-//     let replcaceVars = ((s: string) => (s.replace("{archive_format}", archive_format)).replace("{/ref}", ref));
-//     let namesUrls: string[][] = responseData.map(element => [element.name, replcaceVars(element.archive_url)]
-
-//     );
-//     console.log(namesUrls.toString())
-//     // namesUrls.forEach(nameURL => {
-//     //         fetch(nameURL[1]).then(res => {
-//     //                 if (res.body) {
-//     //                         res.body.pipe(fs.createWriteStream(`./ts-repos/${nameURL[0]}.zip`))
-//     //                 }
-//     //         })
-
-//     // });
-//     namesUrls.forEach(nameURL => {
-//       try {
-//         fetch(nameURL[1]).then(res => {
-//           if (res.body) {
-//             res.body.pipe(fs.createWriteStream(`./ts-repos/${nameURL[0]}.zip`))
-//           }
-//           else { console.log("no response body") }
-//         }).catch((x) => console.log(`can't fetch${nameURL[1]}` + x.stack))
-
-//       } catch (error) {
-//         console.log(`can't fetch${nameURL[1]}`)
-//       }
-
-
-//     });
-//     counter++;
-
-
-//   }
-
-
-// }
-
+main();
